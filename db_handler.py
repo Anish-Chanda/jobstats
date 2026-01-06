@@ -3,7 +3,15 @@ try:
 except ImportError:
     MySQLdb = None
 import sys
-from config import EXTERNAL_DB_CONFIG, EXTERNAL_DB_TABLE
+import json
+import base64
+import gzip
+from config import EXTERNAL_DB_CONFIG
+
+# table names for structured external database schema
+EXTERNAL_DB_SUMMARY_TABLE = "job_summary"
+EXTERNAL_DB_NODES_TABLE = "job_nodes"
+EXTERNAL_DB_GPU_TABLE = "job_gpu_metrics"
 
 class JobstatsDBHandler:
     def __init__(self):
@@ -46,7 +54,7 @@ class JobstatsDBHandler:
             
             query = f"""
             SELECT admin_comment 
-            FROM {EXTERNAL_DB_TABLE}
+            FROM {EXTERNAL_DB_SUMMARY_TABLE}
             WHERE cluster = %s AND jobid = %s
             ORDER BY updated_at DESC
             LIMIT 1
@@ -90,7 +98,7 @@ class JobstatsDBHandler:
         cur = conn.cursor()
         
         query = f"""
-        INSERT INTO {EXTERNAL_DB_TABLE} 
+        INSERT INTO {EXTERNAL_DB_SUMMARY_TABLE} 
         (cluster, jobid, admin_comment, created_at, updated_at) 
         VALUES (%s, %s, %s, NOW(), NOW())
         ON DUPLICATE KEY UPDATE 
